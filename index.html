@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Little Shopper · Shopping Game</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{
+    margin:0;padding:16px 16px 70px;
+    font-family:"Comic Sans MS","Chalkboard SE","Segoe UI","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    background:
+      radial-gradient(1200px 600px at 8% -10%, #ffe9c9 0%, transparent 60%),
+      radial-gradient(1000px 500px at 100% 0%, #d9f0ff 0%, transparent 55%),
+      #fdf8f1;
+    color:#4a3b32;min-height:100vh;
+  }
+  /* ===== Header ===== */
+  .topbar{text-align:center;margin-bottom:14px}
+  .topbar h1{margin:0;font-size:26px;letter-spacing:2px;color:#e8701a;text-shadow:0 2px 0 #ffe0b8}
+  .topbar p{margin:6px 0 0;color:#9a8879;font-size:13px}
+
+  /* ===== Wallet ===== */
+  .wallet-card{
+    max-width:1180px;margin:0 auto 16px;
+    background:linear-gradient(135deg,#fff8e8,#ffe8c7);
+    border:3px solid #ffd79a;border-radius:22px;padding:14px 18px;
+    display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;
+    box-shadow:0 8px 20px rgba(255,180,90,.18);
+  }
+  .wallet-label{font-size:14px;color:#a87b3f;font-weight:700}
+  .wallet-amount{font-size:36px;font-weight:800;color:#f4820b;line-height:1.1}
+  .wallet-right{display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+  .quick{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .chip{
+    border:none;border-radius:999px;padding:8px 14px;background:#fff;color:#f4820b;
+    font-weight:800;font-size:15px;font-family:inherit;cursor:pointer;
+    box-shadow:0 3px 0 #f3c789;transition:.1s;
+  }
+  .chip:active{transform:translateY(3px);box-shadow:none}
+  .custom{display:flex;gap:6px;align-items:center}
+  .custom input{
+    width:130px;padding:8px 10px;border-radius:12px;border:2px solid #ffd79a;
+    font-family:inherit;font-size:14px;outline:none;background:#fff;
+  }
+  .custom input:focus{border-color:#ffb055}
+  .btn-add{
+    border:none;border-radius:12px;padding:8px 14px;background:#ffb055;color:#fff;
+    font-weight:800;font-family:inherit;font-size:14px;cursor:pointer;box-shadow:0 3px 0 #dd6f0a;
+  }
+  .btn-add:active{transform:translateY(3px);box-shadow:none}
+  .btn-reset{
+    border:2px solid #ffd79a;background:#fff;border-radius:12px;padding:6px 12px;
+    color:#c08a4a;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;
+  }
+
+  /* ===== Layout ===== */
+  .main{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:1fr 330px;gap:16px;align-items:start}
+  .shelves{display:flex;flex-direction:column;gap:16px}
+
+  /* ===== Shelves ===== */
+  .shelf{
+    background:#fff;border-radius:20px;padding:14px 16px 18px;
+    border:3px solid #ffe7c9;box-shadow:0 6px 16px rgba(200,160,110,.10);
+  }
+  .shelf[data-cat="vegetable"]{border-color:#d6f0cf}
+  .shelf[data-cat="fruit"]{border-color:#ffd9e3}
+  .shelf-title{
+    margin:0 0 12px;font-size:17px;display:flex;align-items:center;gap:8px;color:#5b4a3d;
+  }
+  .items{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
+  .item{
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+    padding:10px 6px;border-radius:16px;border:2px solid #ffe9d0;
+    background:linear-gradient(#fffdf8,#fff5e6);
+    cursor:pointer;font-family:inherit;color:inherit;
+    transition:transform .12s,box-shadow .12s,border-color .12s;
+  }
+  .item:hover{transform:translateY(-3px);border-color:#ffc27a;box-shadow:0 8px 14px rgba(255,170,80,.25)}
+  .item:active{transform:scale(.95)}
+  .item .emoji{font-size:30px;line-height:1}
+  .item .iname{font-size:12.5px;color:#5b4a3d;text-align:center;line-height:1.15}
+  .item .iprice{font-size:15px;font-weight:800;color:#e8701a}
+  .item.pop{animation:pop .3s}
+  @keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.12)}100%{transform:scale(1)}}
+
+  /* ===== Cart ===== */
+  .cart-panel{
+    background:#fff;border-radius:20px;border:3px solid #cdeaff;padding:14px;
+    position:sticky;top:16px;display:flex;flex-direction:column;
+    max-height:calc(100vh - 32px);box-shadow:0 6px 16px rgba(110,170,220,.15);
+  }
+  .cart-head{font-size:18px;font-weight:800;margin-bottom:10px;color:#2b8ee0}
+  .cart-list{
+    flex:1;overflow-y:auto;min-height:70px;max-height:44vh;
+    display:flex;flex-direction:column;gap:8px;padding-right:4px;
+  }
+  .empty{color:#b6a99c;font-size:14px;text-align:center;padding:26px 8px;line-height:1.9}
+  .cart-item{display:flex;align-items:center;gap:8px;background:#f2f9ff;border-radius:14px;padding:8px 10px}
+  .ci-emoji{font-size:22px}
+  .ci-info{flex:1;min-width:0}
+  .ci-name{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ci-price{font-size:12px;color:#8aa5bb}
+  .ci-qty{display:flex;align-items:center;gap:5px}
+  .ci-qty button{
+    width:24px;height:24px;border-radius:50%;border:none;background:#d8ecff;color:#1c7ed6;
+    font-size:16px;font-weight:800;line-height:1;cursor:pointer;font-family:inherit;
+  }
+  .ci-qty button:active{transform:scale(.88)}
+  .ci-qty span{min-width:16px;text-align:center;font-weight:800;font-size:14px}
+  .ci-sub{font-weight:800;color:#e8701a;font-size:14px;min-width:42px;text-align:right}
+  .cart-summary{margin-top:10px;border-top:2px dashed #d7ecff;padding-top:10px}
+  .row{display:flex;justify-content:space-between;font-size:13px;color:#7d909f;margin-bottom:4px}
+  .row.total{font-size:22px;font-weight:800;color:#e8701a;align-items:baseline}
+  .row.total span:first-child{color:#4a3b32;font-size:14px}
+  .row.total.not-enough{color:#e63946}
+  .btn-pay{
+    width:100%;margin-top:10px;padding:13px;border:none;border-radius:14px;
+    background:linear-gradient(#ffb055,#ff8a1f);color:#fff;font-size:18px;font-weight:800;
+    cursor:pointer;box-shadow:0 5px 0 #dd6f0a;font-family:inherit;letter-spacing:2px;
+  }
+  .btn-pay:active{transform:translateY(3px);box-shadow:0 2px 0 #dd6f0a}
+  .btn-clear{
+    width:100%;margin-top:8px;padding:8px;border:2px solid #e3f1fb;background:#fff;
+    border-radius:12px;color:#7d909f;font-family:inherit;font-size:13px;cursor:pointer;
+  }
+
+  /* ===== Receipt Modal ===== */
+  .mask{
+    position:fixed;inset:0;background:rgba(60,40,20,.38);display:none;
+    align-items:center;justify-content:center;padding:20px;z-index:50;backdrop-filter:blur(3px);
+  }
+  .mask.show{display:flex}
+  .modal{
+    background:#fff;border-radius:24px;padding:22px;max-width:370px;width:100%;
+    box-shadow:0 20px 50px rgba(0,0,0,.25);animation:popIn .25s;max-height:86vh;overflow:auto;
+  }
+  @keyframes popIn{from{transform:scale(.86);opacity:0}to{transform:scale(1);opacity:1}}
+  .receipt-title{text-align:center;font-size:20px;font-weight:800;color:#e8701a;margin-bottom:12px}
+  .receipt-list{list-style:none;padding:0;margin:0 0 12px}
+  .receipt-list li{
+    display:flex;justify-content:space-between;padding:6px 0;font-size:14px;
+    border-bottom:1px dashed #f0e3d5;gap:10px;
+  }
+  .receipt-row{
+    display:flex;justify-content:space-between;font-size:15px;padding:5px 0;color:#5b4a3d;
+  }
+  .receipt-row.big{font-size:19px;font-weight:800;color:#e8701a;border-top:2px dashed #f0e3d5;margin-top:6px;padding-top:10px}
+  .receipt-tip{text-align:center;margin-top:14px;font-size:15px;color:#3ea96b;font-weight:800}
+  .modal-btn{
+    width:100%;margin-top:14px;padding:12px;border:none;border-radius:14px;
+    background:linear-gradient(#6fd48f,#3ea96b);color:#fff;font-size:16px;font-weight:800;
+    cursor:pointer;font-family:inherit;box-shadow:0 4px 0 #2f8a55;
+  }
+  .modal-btn:active{transform:translateY(3px);box-shadow:0 1px 0 #2f8a55}
+
+  /* ===== Toast ===== */
+  .toast{
+    position:fixed;left:50%;bottom:34px;transform:translate(-50%,20px);
+    background:rgba(60,40,20,.9);color:#fff;padding:11px 20px;border-radius:999px;
+    font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:60;
+    max-width:82vw;text-align:center;line-height:1.5;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  @media(max-width:860px){
+    .main{grid-template-columns:1fr}
+    .cart-panel{position:static;max-height:none}
+    .cart-list{max-height:34vh}
+    .wallet-right{align-items:flex-start;width:100%}
+    .quick{justify-content:flex-start}
+    .wallet-amount{font-size:30px}
+  }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <h1>🛒 Little Shopper</h1>
+    <p>Pick and count — do you have enough money?</p>
+  </div>
+
+  <!-- Wallet -->
+  <section class="wallet-card">
+    <div>
+      <div class="wallet-label">💰 My Wallet</div>
+      <div class="wallet-amount">$<span id="walletAmount">20</span></div>
+    </div>
+    <div class="wallet-right">
+      <div class="quick">
+        <button class="chip" data-add="1">+1</button>
+        <button class="chip" data-add="5">+5</button>
+        <button class="chip" data-add="10">+10</button>
+        <button class="chip" data-add="20">+20</button>
+        <button class="chip" data-add="50">+50</button>
+        <button class="chip" data-add="100">+100</button>
+      </div>
+      <div class="custom">
+        <input id="customMoney" type="number" min="1" step="1" inputmode="numeric" placeholder="Custom amount">
+        <button class="btn-add" id="addCustom">Add Money</button>
+        <button class="btn-reset" id="resetAll">Reset</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="shelves" id="shelves"></div>
+
+    <aside class="cart-panel">
+      <div class="cart-head">🛍️ My Cart</div>
+      <div class="cart-list" id="cartList"></div>
+      <div class="cart-summary">
+        <div class="row"><span>Items</span><span id="cartCount">0 items</span></div>
+        <div class="row total" id="totalRow"><span>Total</span><span id="cartTotal">$0</span></div>
+        <button class="btn-pay" id="payBtn">Checkout</button>
+        <button class="btn-clear" id="clearBtn">Clear Cart</button>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Receipt Modal -->
+  <div class="mask" id="mask">
+    <div class="modal" id="modal"></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+/* ============ Goods data (prices 1–100, everyday realistic) ============ */
+const CATEGORIES = [
+  {
+    key:'stationery', title:'Stationery', icon:'✏️',
+    items:[
+      {name:'Pencil',      emoji:'✏️', price:1},
+      {name:'Eraser',      emoji:'🧼', price:2},
+      {name:'Ruler',       emoji:'📏', price:3},
+      {name:'Notebook',    emoji:'📓', price:4},
+      {name:'Pencil Case', emoji:'🧰', price:4},
+      {name:'Sharpener',   emoji:'🗜️', price:6},
+      {name:'Pen',         emoji:'🖊️', price:8},
+      {name:'Markers',     emoji:'🖌️', price:12},
+      {name:'Crayon',      emoji:'🖍️', price:15},
+      {name:'Backpack',    emoji:'🎒', price:68},
+      {name:'Toy Car',     emoji:'🚗', price:11},
+      {name:'Toy Plane',   emoji:'✈️', price:12}
+    ]
+  },
+  {
+    key:'vegetable', title:'Food', icon:'🍽️',
+    items:[
+      {name:'Carrot',     emoji:'🥕', price:3},
+      {name:'Cabbage',    emoji:'🥬', price:3},
+      {name:'Cucumber',   emoji:'🥒', price:4},
+      {name:'Milk',       emoji:'🥛', price:4},
+      {name:'Potato',     emoji:'🥔', price:5},
+      {name:'Corn',       emoji:'🌽', price:5},
+      {name:'Coffee',     emoji:'☕', price:5},
+      {name:'Tomato',     emoji:'🍅', price:6},
+      {name:'Chocolate',  emoji:'🍫', price:6},
+      {name:'Chili',      emoji:'🌶️', price:7},
+      {name:'Broccoli',   emoji:'🥦', price:8},
+      {name:'Noodles',    emoji:'🍜', price:8},
+      {name:'Pumpkin',    emoji:'🎃', price:9},
+      {name:'Mushroom',   emoji:'🍄', price:10},
+      {name:'Fried Rice', emoji:'🍚', price:10},
+      {name:'Fish',       emoji:'🐟', price:12},
+      {name:'Cake',       emoji:'🍰', price:15},
+      {name:'Prawns',     emoji:'🦐', price:18},
+      {name:'Pizza',      emoji:'🍕', price:20}
+    ]
+  },
+  {
+    key:'fruit', title:'Fruits', icon:'🍎',
+    items:[
+      {name:'Banana',     emoji:'🍌', price:5},
+      {name:'Apple',      emoji:'🍎', price:6},
+      {name:'Pear',       emoji:'🍐', price:6},
+      {name:'Orange',     emoji:'🍊', price:7},
+      {name:'Peach',      emoji:'🍑', price:8},
+      {name:'Pineapple',  emoji:'🍍', price:12},
+      {name:'Grapes',     emoji:'🍇', price:15},
+      {name:'Strawberry', emoji:'🍓', price:18},
+      {name:'Watermelon', emoji:'🍉', price:25},
+      {name:'Cherries',   emoji:'🍒', price:45}
+    ]
+  }
+];
+
+const START_MONEY = 20;
+
+/* ============ State ============ */
+let wallet = START_MONEY;
+const cart = new Map();   // key -> {name, emoji, price, qty}
+
+/* ============ Elements ============ */
+const shelvesEl  = document.getElementById('shelves');
+const cartListEl = document.getElementById('cartList');
+const cartTotalEl= document.getElementById('cartTotal');
+const cartCountEl= document.getElementById('cartCount');
+const totalRowEl = document.getElementById('totalRow');
+const walletEl   = document.getElementById('walletAmount');
+const maskEl     = document.getElementById('mask');
+const modalEl    = document.getElementById('modal');
+
+/* ============ Render shelves ============ */
+function renderShelves(){
+  shelvesEl.innerHTML = CATEGORIES.map(cat => `
+    <section class="shelf" data-cat="${cat.key}">
+      <h2 class="shelf-title">${cat.icon} ${cat.title}</h2>
+      <div class="items">
+        ${cat.items.map((it, i) => `
+          <button class="item" data-key="${cat.key}-${i}" title="Tap to add to cart">
+            <span class="emoji">${it.emoji}</span>
+            <span class="iname">${it.name}</span>
+            <span class="iprice">$${it.price}</span>
+          </button>
+        `).join('')}
+      </div>
+    </section>
+  `).join('');
+}
+
+/* ============ Helpers ============ */
+function findGoods(key){
+  const [catKey, idx] = key.split('-');
+  const cat = CATEGORIES.find(c => c.key === catKey);
+  const it = cat.items[Number(idx)];
+  return { name: it.name, emoji: it.emoji, price: it.price };
+}
+
+function cartTotal(){
+  let t = 0;
+  cart.forEach(i => t += i.price * i.qty);
+  return t;
+}
+
+/* ============ Add to cart ============ */
+function addToCart(key){
+  const cur = cart.get(key);
+  if (cur) cur.qty++;
+  else cart.set(key, { ...findGoods(key), qty: 1 });
+  renderCart();
+}
+
+function changeQty(key, delta){
+  const cur = cart.get(key);
+  if (!cur) return;
+  cur.qty += delta;
+  if (cur.qty <= 0) cart.delete(key);
+  renderCart();
+}
+
+/* ============ Render cart ============ */
+function renderCart(){
+  if (cart.size === 0){
+    cartListEl.innerHTML = '<div class="empty">Your cart is empty~<br>Tap an item to start shopping!</div>';
+  } else {
+    cartListEl.innerHTML = [...cart.entries()].map(([key, it]) => `
+      <div class="cart-item">
+        <span class="ci-emoji">${it.emoji}</span>
+        <div class="ci-info">
+          <div class="ci-name">${it.name}</div>
+          <div class="ci-price">$${it.price} each</div>
+        </div>
+        <div class="ci-qty">
+          <button data-act="minus" data-key="${key}">−</button>
+          <span>${it.qty}</span>
+          <button data-act="plus" data-key="${key}">+</button>
+        </div>
+        <div class="ci-sub">$${it.price * it.qty}</div>
+      </div>
+    `).join('');
+  }
+
+  const total = cartTotal();
+  let count = 0;
+  cart.forEach(i => count += i.qty);
+  cartTotalEl.textContent = '$' + total;
+  cartCountEl.textContent = count + (count === 1 ? ' item' : ' items');
+  totalRowEl.classList.toggle('not-enough', total > wallet && total > 0);
+}
+
+/* ============ Wallet ============ */
+function renderWallet(){
+  walletEl.textContent = wallet;
+}
+
+function setWallet(v){
+  wallet = Math.max(0, Math.floor(v));
+  renderWallet();
+  renderCart();
+}
+
+/* ============ Toast ============ */
+let toastTimer;
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ============ Checkout ============ */
+function checkout(){
+  const total = cartTotal();
+
+  if (cart.size === 0){
+    toast('Your cart is empty. Pick something first!');
+    return;
+  }
+  if (wallet < total){
+    toast(`Not enough money! You need $${total - wallet} more. Add some to your wallet~`);
+    return;
+  }
+
+  const items = [...cart.values()].map(i => ({ ...i }));
+  wallet -= total;
+  cart.clear();
+  renderWallet();
+  renderCart();
+  showReceipt(items, total);
+}
+
+function showReceipt(items, total){
+  const list = items.map(i =>
+    `<li><span>${i.emoji} ${i.name} × ${i.qty}</span><span>$${i.price * i.qty}</span></li>`
+  ).join('');
+
+  modalEl.innerHTML = `
+    <div class="receipt-title">🧾 Receipt</div>
+    <ul class="receipt-list">${list}</ul>
+    <div class="receipt-row"><span>Total spent</span><span>$${total}</span></div>
+    <div class="receipt-row big"><span>Wallet left</span><span>$${wallet}</span></div>
+    <div class="receipt-tip">Checkout successful! Great job! 🎉</div>
+    <button class="modal-btn" id="closeModal">Keep Shopping</button>
+  `;
+  maskEl.classList.add('show');
+}
+
+/* ============ Events ============ */
+// Tap a shelf item
+shelvesEl.addEventListener('click', e => {
+  const btn = e.target.closest('.item');
+  if (!btn) return;
+  addToCart(btn.dataset.key);
+  btn.classList.remove('pop');
+  void btn.offsetWidth;
+  btn.classList.add('pop');
+});
+
+// Cart +/- buttons
+cartListEl.addEventListener('click', e => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  changeQty(btn.dataset.key, btn.dataset.act === 'plus' ? 1 : -1);
+});
+
+// Quick add money
+document.querySelectorAll('[data-add]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    setWallet(wallet + Number(btn.dataset.add));
+    toast(`Added $${btn.dataset.add} to your wallet.`);
+  });
+});
+
+// Custom add money
+document.getElementById('addCustom').addEventListener('click', () => {
+  const input = document.getElementById('customMoney');
+  const v = Math.floor(Number(input.value));
+  if (!v || v <= 0){
+    toast('Please enter an amount greater than 0.');
+    return;
+  }
+  setWallet(wallet + v);
+  input.value = '';
+  toast(`Added $${v} to your wallet.`);
+});
+
+document.getElementById('customMoney').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('addCustom').click();
+});
+
+// Reset
+document.getElementById('resetAll').addEventListener('click', () => {
+  cart.clear();
+  setWallet(START_MONEY);
+  renderCart();
+  toast(`Game reset! Wallet is back to $${START_MONEY}.`);
+});
+
+// Checkout / Clear cart
+document.getElementById('payBtn').addEventListener('click', checkout);
+document.getElementById('clearBtn').addEventListener('click', () => {
+  if (cart.size === 0) return;
+  cart.clear();
+  renderCart();
+  toast('Cart cleared.');
+});
+
+// Close receipt
+maskEl.addEventListener('click', e => {
+  if (e.target === maskEl || e.target.id === 'closeModal'){
+    maskEl.classList.remove('show');
+  }
+});
+
+/* ============ Start ============ */
+renderShelves();
+renderWallet();
+renderCart();
+</script>
+</body>
+</html>
